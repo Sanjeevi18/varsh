@@ -12,7 +12,7 @@ const CheckoutPage = () => {
   const { user } = useAuth();
   const { handleCheckout, getCartSummary } = useCartController();
 
-  // Get passed data from cart (plumber details etc)
+  // Get passed data from cart
   const passedData = location.state || {};
   const { needsPlumber, plumberService, cartItems } = passedData;
 
@@ -36,7 +36,7 @@ const CheckoutPage = () => {
   // Step 3: Order confirmation data
   const [orderNotes, setOrderNotes] = useState("");
 
-  // Check if cart is empty, redirect if so
+  // Check if cart is empty
   useEffect(() => {
     if (!cartItems || cartItems.length === 0) {
       alert("Your cart is empty. Redirecting to products.");
@@ -46,19 +46,16 @@ const CheckoutPage = () => {
 
   // Calculate order summary
   const cartSummary = getCartSummary();
-  const plumberServiceFee = plumberService?.serviceFee || 0;
+  const plumberServiceFee =
+    needsPlumber && plumberService ? Number(plumberService.serviceFee) : 0;
   const finalTotal = cartSummary.totalAmount + plumberServiceFee;
 
   const handleNext = () => {
-    if (currentStep < 3) {
-      setCurrentStep(currentStep + 1);
-    }
+    if (currentStep < 3) setCurrentStep(currentStep + 1);
   };
 
   const handlePrevious = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
   const validateAddress = () => {
@@ -75,20 +72,13 @@ const CheckoutPage = () => {
 
   const handleAddressSubmit = (e) => {
     e.preventDefault();
-    if (validateAddress()) {
-      handleNext();
-    } else {
-      alert("Please fill all required fields.");
-    }
+    if (validateAddress()) handleNext();
+    else alert("Please fill all required fields.");
   };
 
   const handlePaymentSubmit = (e) => {
     e.preventDefault();
-    if (paymentMethod) {
-      handleNext();
-    } else {
-      alert("Please select a payment method.");
-    }
+    handleNext();
   };
 
   const handleFinalSubmit = async (e) => {
@@ -99,48 +89,50 @@ const CheckoutPage = () => {
     }
 
     setLoading(true);
-
     try {
-      // Prepare final order data
       const orderDetails = {
         customerNotes: orderNotes,
         deliveryAddress: addressData,
         paymentMethod: paymentMethod,
         plumberService: needsPlumber ? plumberService : null,
+        totalPaid: finalTotal,
       };
-
-      console.log("=== CHECKOUT SUBMISSION ===");
-      console.log("User:", user.uid);
-      console.log("Address Data:", addressData);
-      console.log("Payment Method:", paymentMethod);
-      console.log("Plumber Service:", plumberService);
-      console.log("Order Details being submitted:", orderDetails);
 
       const result = await handleCheckout(orderDetails);
 
-      console.log("Checkout result:", result);
-
       if (result.success) {
-        alert(
-          `Order placed successfully! Order ID: ${result.order?.id || "N/A"}`,
-        );
-        navigate("/products", {
-          state: {
-            message: "Your order has been placed successfully!",
-            orderId: result.order?.id,
-          },
-        });
+        const generatedOrderId = result.order?.id || `ORD${Date.now()}`;
+
+        if (paymentMethod === "upi") {
+          // Navigate to UPI payment screen with order data
+          navigate("/user/payment/upi", {
+            state: {
+              checkoutData: orderDetails,
+              cartItems: cartItems,
+              cartSummary: getCartSummary(),
+              orderId: generatedOrderId,
+            },
+          });
+        } else {
+          alert(`Order placed successfully! Order ID: ${generatedOrderId}`);
+          navigate("/products", {
+            state: {
+              message: "Order placed successfully!",
+              orderId: generatedOrderId,
+            },
+          });
+        }
       } else {
-        console.error("Checkout failed:", result.error);
         alert("Failed to process order: " + (result.error || "Unknown error"));
       }
     } catch (error) {
-      console.error("Order submission error:", error);
       alert("Error processing order: " + error.message);
     } finally {
       setLoading(false);
     }
   };
+
+  // --- RENDER FUNCTIONS ---
 
   const renderStepIndicator = () => (
     <div className="step-indicator">
@@ -189,7 +181,6 @@ const CheckoutPage = () => {
             />
           </div>
         </div>
-
         <div className="form-group">
           <label>Address *</label>
           <textarea
@@ -197,55 +188,37 @@ const CheckoutPage = () => {
             onChange={(e) =>
               setAddressData({ ...addressData, address: e.target.value })
             }
-            rows="3"
+            rows="2"
             required
           />
         </div>
-
         <div className="form-row">
-          <div className="form-group">
-            <label>City *</label>
-            <input
-              type="text"
-              value={addressData.city}
-              onChange={(e) =>
-                setAddressData({ ...addressData, city: e.target.value })
-              }
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>State *</label>
-            <input
-              type="text"
-              value={addressData.state}
-              onChange={(e) =>
-                setAddressData({ ...addressData, state: e.target.value })
-              }
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>Pincode *</label>
-            <input
-              type="text"
-              value={addressData.pincode}
-              onChange={(e) =>
-                setAddressData({ ...addressData, pincode: e.target.value })
-              }
-              required
-            />
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label>Landmark (Optional)</label>
           <input
             type="text"
-            value={addressData.landmark}
+            placeholder="City *"
+            value={addressData.city}
             onChange={(e) =>
-              setAddressData({ ...addressData, landmark: e.target.value })
+              setAddressData({ ...addressData, city: e.target.value })
             }
+            required
+          />
+          <input
+            type="text"
+            placeholder="State *"
+            value={addressData.state}
+            onChange={(e) =>
+              setAddressData({ ...addressData, state: e.target.value })
+            }
+            required
+          />
+          <input
+            type="text"
+            placeholder="Pincode *"
+            value={addressData.pincode}
+            onChange={(e) =>
+              setAddressData({ ...addressData, pincode: e.target.value })
+            }
+            required
           />
         </div>
       </form>
@@ -254,261 +227,72 @@ const CheckoutPage = () => {
 
   const renderPaymentForm = () => (
     <div className="checkout-step payment-step">
-      <h2>Payment Method</h2>
-      <form onSubmit={handlePaymentSubmit} className="payment-form">
-        <div className="payment-options">
+      <h2>Select Payment Method</h2>
+      <div className="payment-options">
+        {["cod", "upi", "card"].map((method) => (
           <label
-            className={`payment-option ${paymentMethod === "cod" ? "selected" : ""}`}
+            key={method}
+            className={`payment-option ${paymentMethod === method ? "selected" : ""}`}
           >
             <input
               type="radio"
-              value="cod"
-              checked={paymentMethod === "cod"}
+              value={method}
+              checked={paymentMethod === method}
               onChange={(e) => setPaymentMethod(e.target.value)}
             />
             <div className="option-content">
-              <div className="option-icon">💰</div>
+              <span className="option-icon">
+                {method === "cod" ? "💰" : method === "upi" ? "📱" : "💳"}
+              </span>
               <div>
-                <h3>Cash on Delivery</h3>
-                <p>Pay when you receive your order</p>
+                <h3>
+                  {method === "cod"
+                    ? "Cash on Delivery"
+                    : method === "upi"
+                      ? "UPI Payment"
+                      : "Credit/Debit Card"}
+                </h3>
+                <p>
+                  {method === "cod"
+                    ? "Pay at your doorstep"
+                    : "Instant & Secure"}
+                </p>
               </div>
             </div>
           </label>
-
-          <label
-            className={`payment-option ${paymentMethod === "upi" ? "selected" : ""}`}
-          >
-            <input
-              type="radio"
-              value="upi"
-              checked={paymentMethod === "upi"}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-            />
-            <div className="option-content">
-              <div className="option-icon">📱</div>
-              <div>
-                <h3>UPI Payment</h3>
-                <p>Pay instantly using UPI apps</p>
-              </div>
-            </div>
-          </label>
-
-          <label
-            className={`payment-option ${paymentMethod === "card" ? "selected" : ""}`}
-          >
-            <input
-              type="radio"
-              value="card"
-              checked={paymentMethod === "card"}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-            />
-            <div className="option-content">
-              <div className="option-icon">💳</div>
-              <div>
-                <h3>Credit/Debit Card</h3>
-                <p>Secure card payment</p>
-              </div>
-            </div>
-          </label>
-        </div>
-      </form>
-    </div>
-  );
-
-  const renderOrderSummary = () => (
-    <div className="order-summary-section">
-      <h3>Order Summary</h3>
-
-      {/* Cart Items */}
-      <div className="summary-items">
-        {cartItems?.map((item, index) => (
-          <div key={index} className="summary-item">
-            <img src={item.image} alt={item.name} />
-            <div className="item-details">
-              <h4>{item.name}</h4>
-              <p>
-                Qty: {item.quantity} × ₹{item.price}
-              </p>
-            </div>
-            <div className="item-total">₹{item.quantity * item.price}</div>
-          </div>
         ))}
-      </div>
-
-      {/* Plumber Service */}
-      {needsPlumber && plumberService && (
-        <div className="plumber-summary">
-          <h4>Plumber Service</h4>
-          <div className="plumber-details">
-            <p>
-              <strong>Name:</strong> {plumberService.name}
-            </p>
-            <p>
-              <strong>Date:</strong> {plumberService.date}
-            </p>
-            {plumberService.time && (
-              <p>
-                <strong>Time:</strong>{" "}
-                {plumberService.time === "08:00"
-                  ? "8:00 AM"
-                  : plumberService.time === "09:00"
-                    ? "9:00 AM"
-                    : plumberService.time === "10:00"
-                      ? "10:00 AM"
-                      : plumberService.time === "11:00"
-                        ? "11:00 AM"
-                        : plumberService.time === "12:00"
-                          ? "12:00 PM"
-                          : plumberService.time === "13:00"
-                            ? "1:00 PM"
-                            : plumberService.time === "14:00"
-                              ? "2:00 PM"
-                              : plumberService.time === "15:00"
-                                ? "3:00 PM"
-                                : plumberService.time === "16:00"
-                                  ? "4:00 PM"
-                                  : plumberService.time === "17:00"
-                                    ? "5:00 PM"
-                                    : plumberService.time === "18:00"
-                                      ? "6:00 PM"
-                                      : plumberService.time}
-              </p>
-            )}
-            <p>
-              <strong>Phone:</strong> {plumberService.phone}
-            </p>
-            <p>
-              <strong>Area:</strong> {plumberService.area},{" "}
-              {plumberService.city}
-            </p>
-            <p>
-              <strong>Service Fee:</strong> ₹{plumberService.serviceFee}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Order Totals */}
-      <div className="order-totals">
-        <div className="total-row">
-          <span>Subtotal:</span>
-          <span>₹{cartSummary.totalAmount}</span>
-        </div>
-        {plumberServiceFee > 0 && (
-          <div className="total-row">
-            <span>Plumber Service:</span>
-            <span>₹{plumberServiceFee}</span>
-          </div>
-        )}
-        <div className="total-row final-total">
-          <span>Total Amount:</span>
-          <span>₹{finalTotal}</span>
-        </div>
       </div>
     </div>
   );
 
   const renderConfirmationStep = () => (
     <div className="checkout-step confirmation-step">
-      <h2>Order Confirmation</h2>
-
-      <div className="confirmation-content">
-        {/* Delivery Address Summary */}
-        <div className="summary-section">
-          <h3>Delivery Address</h3>
-          <div className="address-summary">
-            <p>
-              <strong>{addressData.fullName}</strong>
-            </p>
-            <p>{addressData.phone}</p>
-            <p>{addressData.address}</p>
-            <p>
-              {addressData.city}, {addressData.state} - {addressData.pincode}
-            </p>
-            {addressData.landmark && <p>Landmark: {addressData.landmark}</p>}
-          </div>
-        </div>
-
-        {/* Payment Method Summary */}
-        <div className="summary-section">
-          <h3>Payment Method</h3>
-          <p className="payment-summary">
-            {paymentMethod === "cod" && "💰 Cash on Delivery"}
-            {paymentMethod === "upi" && "📱 UPI Payment"}
-            {paymentMethod === "card" && "💳 Credit/Debit Card"}
+      <h2>Review Your Order</h2>
+      <div className="confirmation-grid">
+        <div className="conf-box">
+          <h4>Delivery To:</h4>
+          <p>
+            <strong>{addressData.fullName}</strong>
           </p>
+          <p>
+            {addressData.address}, {addressData.city}
+          </p>
+          <p>Phone: {addressData.phone}</p>
         </div>
-
-        {/* Order Notes */}
-        <div className="summary-section">
-          <h3>Order Notes (Optional)</h3>
-          <textarea
-            value={orderNotes}
-            onChange={(e) => setOrderNotes(e.target.value)}
-            placeholder="Any special instructions for your order..."
-            rows="3"
-            className="order-notes"
-          />
+        <div className="conf-box">
+          <h4>Payment Method:</h4>
+          <p>{paymentMethod.toUpperCase()}</p>
         </div>
       </div>
-    </div>
-  );
-
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 1:
-        return renderAddressForm();
-      case 2:
-        return renderPaymentForm();
-      case 3:
-        return renderConfirmationStep();
-      default:
-        return renderAddressForm();
-    }
-  };
-
-  const renderStepButtons = () => (
-    <div className="step-buttons">
-      {currentStep > 1 && (
-        <button
-          type="button"
-          onClick={handlePrevious}
-          className="btn-secondary"
-        >
-          Previous
-        </button>
-      )}
-
-      {currentStep === 1 && (
-        <button
-          type="submit"
-          onClick={handleAddressSubmit}
-          className="btn-primary"
-        >
-          Continue to Payment
-        </button>
-      )}
-
-      {currentStep === 2 && (
-        <button
-          type="submit"
-          onClick={handlePaymentSubmit}
-          className="btn-primary"
-        >
-          Continue to Confirm
-        </button>
-      )}
-
-      {currentStep === 3 && (
-        <button
-          type="submit"
-          onClick={handleFinalSubmit}
-          disabled={loading}
-          className="btn-primary place-order-btn"
-        >
-          {loading ? "Placing Order..." : "Place Order"}
-        </button>
-      )}
+      <div className="form-group" style={{ marginTop: "20px" }}>
+        <label>Special Instructions (Optional)</label>
+        <textarea
+          value={orderNotes}
+          onChange={(e) => setOrderNotes(e.target.value)}
+          placeholder="e.g. Please call before delivery..."
+          rows="2"
+        />
+      </div>
     </div>
   );
 
@@ -523,11 +307,68 @@ const CheckoutPage = () => {
 
         <div className="checkout-layout">
           <div className="checkout-content">
-            {renderStepContent()}
-            {renderStepButtons()}
+            {currentStep === 1 && renderAddressForm()}
+            {currentStep === 2 && renderPaymentForm()}
+            {currentStep === 3 && renderConfirmationStep()}
+
+            <div className="step-buttons">
+              {currentStep > 1 && (
+                <button className="btn-secondary" onClick={handlePrevious}>
+                  Back
+                </button>
+              )}
+              {currentStep < 3 ? (
+                <button
+                  className="btn-primary"
+                  onClick={
+                    currentStep === 1
+                      ? handleAddressSubmit
+                      : handlePaymentSubmit
+                  }
+                >
+                  Continue
+                </button>
+              ) : (
+                <button
+                  className="btn-primary place-order-btn"
+                  onClick={handleFinalSubmit}
+                  disabled={loading}
+                >
+                  {loading
+                    ? "Processing..."
+                    : paymentMethod === "upi"
+                      ? "Confirm & Pay"
+                      : "Place Order"}
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="checkout-sidebar">{renderOrderSummary()}</div>
+          <aside className="checkout-sidebar">
+            <div className="order-summary-section">
+              <h3>Order Summary</h3>
+              <div className="summary-items">
+                {cartItems?.map((item, i) => (
+                  <div key={i} className="summary-item">
+                    <span>
+                      {item.name} (x{item.quantity})
+                    </span>
+                    <span>₹{item.price * item.quantity}</span>
+                  </div>
+                ))}
+                {needsPlumber && (
+                  <div className="summary-item service">
+                    <span>Plumber Fee</span>
+                    <span>₹{plumberServiceFee}</span>
+                  </div>
+                )}
+              </div>
+              <div className="final-total-row">
+                <span>Grand Total</span>
+                <span>₹{finalTotal.toLocaleString()}</span>
+              </div>
+            </div>
+          </aside>
         </div>
       </main>
       <Footer />

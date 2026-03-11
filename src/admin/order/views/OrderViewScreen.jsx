@@ -24,28 +24,29 @@ const OrderViewScreen = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    const fetchOrderDetails = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const result = await orderService.getOrderById(null, orderId);
+
+        if (result.success && result.order) {
+          setOrder(result.order);
+        } else {
+          setError("Order not found");
+        }
+      } catch (err) {
+        console.error("Error fetching order:", err);
+        setError("Failed to fetch order details");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchOrderDetails();
   }, [orderId]);
 
-  const fetchOrderDetails = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      const result = await orderService.getOrderById(null, orderId);
-
-      if (result.success && result.order) {
-        setOrder(result.order);
-      } else {
-        setError("Order not found");
-      }
-    } catch (err) {
-      console.error("Error fetching order:", err);
-      setError("Failed to fetch order details");
-    } finally {
-      setLoading(false);
-    }
-  };
   const formatDate = (timestamp) => {
     if (!timestamp) return "N/A";
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);

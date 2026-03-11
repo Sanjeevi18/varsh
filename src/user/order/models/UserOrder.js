@@ -155,6 +155,46 @@ class UserOrder {
       plumberName: this.getPlumberName(),
     };
   }
+
+  // Create order from checkout data
+  static fromCheckoutData(checkoutData, cartItems, userId) {
+    const now = new Date();
+    const orderNumber = `ORD${Date.now()}`;
+
+    // Calculate totals
+    const subtotal = cartItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0,
+    );
+    const plumberServiceFee = checkoutData.plumberService?.serviceFee || 0;
+    const total = subtotal + plumberServiceFee;
+
+    return new UserOrder(
+      "", // id will be set by Firestore
+      orderNumber,
+      userId,
+      cartItems.map((item) => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        image: item.image,
+        category: item.category || "",
+        total: item.price * item.quantity,
+      })),
+      subtotal,
+      0, // tax
+      total,
+      checkoutData.customerNotes || "",
+      "pending",
+      "pending",
+      checkoutData.deliveryAddress,
+      checkoutData.plumberService,
+      plumberServiceFee,
+      now,
+      now,
+    );
+  }
 }
 
 export default UserOrder;
