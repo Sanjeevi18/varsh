@@ -92,21 +92,39 @@ export const getOrderById = async (adminUserId, orderId) => {
       if (doc.id === orderId) {
         const orderData = doc.data();
         foundOrder = {
+          id: doc.id,
           orderId: doc.id,
-          orderNumber: orderData.orderNumber,
-          customerName: orderData.userId,
-          customerPhone: "N/A",
-          customerEmail: "N/A",
-          orderDate: orderData.createdAt?.toDate?.() || orderData.createdAt,
+          orderNumber: orderData.orderNumber || `ORD-${doc.id.slice(-8)}`,
+          customerInfo: orderData.customerInfo || {
+            name: orderData.customerName || "N/A",
+            email: orderData.customerEmail || "N/A",
+            phone: orderData.customerPhone || "N/A",
+          },
+          customerName:
+            orderData.customerName || orderData.customerInfo?.name || "N/A",
+          customerPhone:
+            orderData.customerPhone || orderData.customerInfo?.phone || "N/A",
+          customerEmail:
+            orderData.customerEmail || orderData.customerInfo?.email || "N/A",
+          orderDate:
+            orderData.createdAt?.toDate?.() ||
+            orderData.orderDate ||
+            orderData.createdAt,
+          createdAt: orderData.createdAt,
           items: orderData.items || [],
-          totalAmount: orderData.total || 0,
+          totalAmount: orderData.total || orderData.totalAmount || 0,
+          total: orderData.total || orderData.totalAmount || 0,
           subtotal: orderData.subtotal || 0,
           tax: orderData.tax || 0,
           status: orderData.status || "pending",
           paymentStatus: orderData.paymentStatus || "pending",
+          paymentMethod: orderData.paymentMethod || "COD",
           customerNotes: orderData.customerNotes || "",
           deliveryAddress: orderData.deliveryAddress,
+          plumberService: orderData.plumberService,
+          plumberSelected: orderData.plumberSelected,
           userId: orderData.userId,
+          ...orderData, // Include any other fields from the original order
         };
       }
     });

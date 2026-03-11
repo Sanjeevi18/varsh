@@ -1,306 +1,365 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../../../contexts/AuthContext";
-import * as orderController from "../controllers/orderController";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import * as orderService from "../services/orderService";
 import {
   FiArrowLeft,
   FiUser,
-  FiTruck,
+  FiMapPin,
   FiPackage,
-  FiClock,
-  FiCheckCircle,
-  FiXCircle,
   FiCreditCard,
+  FiCalendar,
+  FiPhone,
+  FiClock,
+  FiDollarSign,
   FiTool,
+  FiMail,
 } from "react-icons/fi";
 import "./OrderViewScreen.css";
 
 const OrderViewScreen = () => {
   const { orderId } = useParams();
-  const { currentUser } = useAuth();
   const navigate = useNavigate();
-
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
-  const [error, setError] = useState(null);
-
-  const fetchOrderDetails = useCallback(async () => {
-    if (!currentUser || !orderId) return;
-
-    try {
-      setLoading(true);
-      const result = await orderController.fetchOrderById(
-        currentUser.uid,
-        orderId,
-      );
-
-      if (result.success) {
-        setOrder(result.order);
-        setError(null);
-      } else {
-        setError("Order not found.");
-      }
-    } catch (fetchError) {
-      console.error("Error fetching order:", fetchError);
-      setError("Failed to load order details.");
-    } finally {
-      setLoading(false);
-    }
-  }, [currentUser, orderId]);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetchOrderDetails();
-  }, [fetchOrderDetails]);
+  }, [orderId]);
 
-  const handleUpdateStatus = async (newStatus) => {
-    setUpdating(true);
+  const fetchOrderDetails = async () => {
     try {
-      const result = await orderController.updateOrderStatus(
-        orderId,
-        newStatus,
-      );
-      if (result.success) {
-        setOrder((prev) => ({ ...prev, status: newStatus }));
+      setLoading(true);
+      setError("");
+
+      const result = await orderService.getOrderById(null, orderId);
+
+      if (result.success && result.order) {
+        setOrder(result.order);
+      } else {
+        setError("Order not found");
       }
-    } catch {
-      // Using an empty catch or renaming it avoids the 'unused-vars' error
-      alert("Failed to update status. Please check your connection.");
+    } catch (err) {
+      console.error("Error fetching order:", err);
+      setError("Failed to fetch order details");
     } finally {
-      setUpdating(false);
+      setLoading(false);
     }
   };
+  const formatDate = (timestamp) => {
+    if (!timestamp) return "N/A";
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
-  if (loading)
+  const formatTime = (timeString) => {
+    if (!timeString) return "N/A";
+    const timeMap = {
+      "08:00": "8:00 AM",
+      "09:00": "9:00 AM",
+      "10:00": "10:00 AM",
+      "11:00": "11:00 AM",
+      "12:00": "12:00 PM",
+      "13:00": "1:00 PM",
+      "14:00": "2:00 PM",
+      "15:00": "3:00 PM",
+      "16:00": "4:00 PM",
+      "17:00": "5:00 PM",
+      "18:00": "6:00 PM",
+    };
+    return timeMap[timeString] || timeString;
+  };
+  if (loading) {
     return (
-      <div className="loader-container">
-        <div className="loader"></div>
+      <div className="order-view-screen">
+        <div className="loading-spinner">Loading order details...</div>
       </div>
     );
-  if (error)
+  }
+
+  if (error) {
     return (
-      <div className="error-container">
-        {error} <Link to="/admin/orders">Go Back</Link>
+      <div className="order-view-screen">
+        <div className="error-message">
+          <h2>Error</h2>
+          <p>{error}</p>
+          <button
+            onClick={() => navigate("/admin/orders")}
+            className="btn-back"
+          >
+            Back to Orders
+          </button>
+        </div>
       </div>
     );
-  if (!order) return null;
+  }
+
+  if (!order) {
+    return (
+      <div className="order-view-screen">
+        <div className="error-message">
+          <h2>Order Not Found</h2>
+          <p>The requested order could not be found.</p>
+          <button
+            onClick={() => navigate("/admin/orders")}
+            className="btn-back"
+          >
+            Back to Orders
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="order-view-container">
-      <header className="order-view-header">
-        <button className="back-btn" onClick={() => navigate(-1)}>
+    <div className="order-view-screen">
+      {/* Header */}
+      <div className="view-header">
+        <button onClick={() => navigate("/admin/orders")} className="btn-back">
           <FiArrowLeft /> Back to Orders
         </button>
-        <div className="header-title">
-          <h1>Order #{orderId.slice(-6).toUpperCase()}</h1>
-          <span className={`status-badge ${order.status?.toLowerCase()}`}>
-            {order.status || "Pending"}
-          </span>
-        </div>
-      </header>
+        <h1 className="view-title">
+          Order #{order.orderNumber || order.id?.slice(-8).toUpperCase()}
+        </h1>
+      </div>
 
-      <div className="order-grid">
-        <div className="order-main">
-          <section className="order-card">
-            <h3>
-              <FiPackage /> Order Items
-            </h3>
-            <table className="items-table">
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Qty</th>
-                  <th>Price</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {order.items &&
-                  order.items.map((item, index) => (
-                    <tr key={index}>
-                      <td>{item.name}</td>
-                      <td>{item.quantity}</td>
-                      <td>${item.price}</td>
-                      <td>${(item.quantity * item.price).toFixed(2)}</td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-            <div className="order-total-section">
-              <div className="total-row">
-                <span>Subtotal:</span>
-                <span>${order.subtotal || 0}</span>
-              </div>
-              <div className="total-row grand-total">
-                <span>Grand Total:</span>
-                <span>${order.totalAmount || 0}</span>
+      {/* Order Details Container */}
+      <div className="order-details-container">
+        {/* Customer Information */}
+        <section className="details-card">
+          <div className="card-header">
+            <h2>
+              <FiUser /> Customer Information
+            </h2>
+            <span
+              className={`status-badge status-${order.status?.toLowerCase() || "pending"}`}
+            >
+              {order.status || "Pending"}
+            </span>
+          </div>
+          <div className="card-body">
+            <div className="info-row">
+              <span className="info-label">Customer Name:</span>
+              <span className="info-value">
+                {order.customerInfo?.name || order.customerName || "N/A"}
+              </span>
+            </div>
+            <div className="info-row">
+              <span className="info-label">Email:</span>
+              <span className="info-value">
+                <FiMail /> {order.customerInfo?.email || "N/A"}
+              </span>
+            </div>
+            <div className="info-row">
+              <span className="info-label">Phone:</span>
+              <span className="info-value">
+                <FiPhone /> {order.customerInfo?.phone || "N/A"}
+              </span>
+            </div>
+            <div className="info-row">
+              <span className="info-label">Order Date:</span>
+              <span className="info-value">
+                <FiCalendar /> {formatDate(order.orderDate || order.createdAt)}
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {/* Delivery Address */}
+        {order.deliveryAddress && (
+          <section className="details-card">
+            <div className="card-header">
+              <h2>
+                <FiMapPin /> Delivery Address
+              </h2>
+            </div>
+            <div className="card-body">
+              <div className="address-details">
+                <p>{order.deliveryAddress.street || "N/A"}</p>
+                <p>
+                  {order.deliveryAddress.city || "N/A"},{" "}
+                  {order.deliveryAddress.state || "N/A"}
+                </p>
+                <p>Pin Code: {order.deliveryAddress.postalCode || "N/A"}</p>
               </div>
             </div>
           </section>
+        )}
 
-          <section className="order-card">
-            <h3>
-              <FiTool /> Admin Actions
-            </h3>
-            <div className="action-buttons">
-              <button
-                disabled={updating || order.status === "Shipped"}
-                onClick={() => handleUpdateStatus("Shipped")}
-                className="btn-shipped"
-              >
-                <FiTruck /> Mark as Shipped
-              </button>
-              <button
-                disabled={updating || order.status === "Delivered"}
-                onClick={() => handleUpdateStatus("Delivered")}
-                className="btn-delivered"
-              >
-                <FiCheckCircle /> Mark as Delivered
-              </button>
-              <button
-                disabled={updating || order.status === "Cancelled"}
-                onClick={() => handleUpdateStatus("Cancelled")}
-                className="btn-cancelled"
-              >
-                <FiXCircle /> Cancel Order
-              </button>
+        {/* Order Items */}
+        {order.items && order.items.length > 0 && (
+          <section className="details-card">
+            <div className="card-header">
+              <h2>
+                <FiPackage /> Order Items ({order.items.length})
+              </h2>
+            </div>
+            <div className="card-body">
+              <div className="items-list">
+                {order.items.map((item, index) => (
+                  <div key={index} className="item-row">
+                    <div className="item-info">
+                      <h4>{item.itemName || item.name || "Unknown Item"}</h4>
+                      <p>Quantity: {item.quantity}</p>
+                    </div>
+                    <div className="item-price">
+                      <span>₹{(item.price || 0).toFixed(2)} each</span>
+                      <strong>
+                        ₹{((item.price || 0) * item.quantity).toFixed(2)}
+                      </strong>
+                    </div>
+                  </div>
+                ))}
+                <div className="items-total">
+                  <strong>
+                    Items Total: ₹{(order.subtotal || 0).toFixed(2)}
+                  </strong>
+                </div>
+              </div>
             </div>
           </section>
-        </div>
+        )}
 
-        <div className="order-sidebar">
-          <section className="order-card">
-            <h3>
-              <FiUser /> Customer
-            </h3>
-            <p>
-              <strong>Name:</strong> {order.deliveryAddress?.fullName || "N/A"}
-            </p>
-            <p>
-              <strong>Phone:</strong> {order.deliveryAddress?.phone || "N/A"}
-            </p>
-          </section>
+        {/* Payment Details */}
+        <section className="details-card">
+          <div className="card-header">
+            <h2>
+              <FiCreditCard /> Payment Details
+            </h2>
+          </div>
+          <div className="card-body">
+            <div className="info-row">
+              <span className="info-label">Payment Method:</span>
+              <span className="info-value">
+                {order.paymentMethod === "cod"
+                  ? "💰 Cash on Delivery"
+                  : order.paymentMethod === "upi"
+                    ? "📱 UPI Payment"
+                    : order.paymentMethod === "card"
+                      ? "💳 Credit/Debit Card"
+                      : order.paymentMethod || "COD"}
+              </span>
+            </div>
+            <div className="info-row">
+              <span className="info-label">Payment Status:</span>
+              <span className="info-value">
+                {order.paymentStatus || "Pending"}
+              </span>
+            </div>
+            <div className="info-row">
+              <span className="info-label">Total Amount:</span>
+              <span className="info-value">
+                <FiDollarSign />{" "}
+                <strong>
+                  ₹{(order.totalAmount || order.total || 0).toFixed(2)}
+                </strong>
+              </span>
+            </div>
+          </div>
+        </section>
 
-          <section className="order-card">
-            <h3>
-              <FiTruck /> Shipping Address
-            </h3>
-            <p>{order.deliveryAddress?.address}</p>
-            <p>
-              {order.deliveryAddress?.city}, {order.deliveryAddress?.landmark}
-            </p>
-            <p>Pincode: {order.deliveryAddress?.pincode}</p>
-          </section>
-
-          <section className="order-card">
-            <h3>
-              <FiCreditCard /> Payment
-            </h3>
-            <p>
-              <strong>Method:</strong>{" "}
-              {order.paymentMethod === "cod"
-                ? "💰 Cash on Delivery"
-                : order.paymentMethod === "upi"
-                  ? "📱 UPI Payment"
-                  : order.paymentMethod === "card"
-                    ? "💳 Credit/Debit Card"
-                    : order.paymentMethodSelected
-                      ? "Online"
-                      : "COD"}
-            </p>
-            <p>
-              <strong>Status:</strong> {order.paymentStatus || "Pending"}
-            </p>
-          </section>
-
-          {/* Plumber Service Details */}
-          {order.plumberService && (
-            <section className="order-card plumber-service-card">
-              <h3>🔧 Plumber Service</h3>
+        {/* Plumber Service Details */}
+        {order.plumberService && (
+          <section className="details-card plumber-service-card">
+            <div className="card-header">
+              <h2>
+                <FiTool /> Plumber Service Booking
+              </h2>
+            </div>
+            <div className="card-body">
               <div className="plumber-details">
-                <p>
-                  <strong>Name:</strong> {order.plumberService.name || "N/A"}
-                </p>
-                <p>
-                  <strong>Phone:</strong> 📞{" "}
-                  {order.plumberService.phone || "N/A"}
-                </p>
-                <p>
-                  <strong>Date:</strong>{" "}
-                  {order.plumberService.date
-                    ? new Date(order.plumberService.date).toLocaleDateString(
-                        "en-IN",
-                        {
-                          weekday: "long",
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        },
-                      )
-                    : "N/A"}
-                </p>
+                <div className="info-row">
+                  <span className="info-label">Plumber Name:</span>
+                  <span className="info-value">
+                    <FiUser /> {order.plumberService.name || "N/A"}
+                  </span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">Phone Number:</span>
+                  <span className="info-value">
+                    <FiPhone /> {order.plumberService.phone || "N/A"}
+                  </span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">Service Date:</span>
+                  <span className="info-value">
+                    <FiCalendar />{" "}
+                    {order.plumberService.date
+                      ? new Date(order.plumberService.date).toLocaleDateString(
+                          "en-IN",
+                          {
+                            weekday: "long",
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          },
+                        )
+                      : "N/A"}
+                  </span>
+                </div>
                 {order.plumberService.time && (
-                  <p>
-                    <strong>Time:</strong>{" "}
-                    {order.plumberService.time === "08:00"
-                      ? "8:00 AM"
-                      : order.plumberService.time === "09:00"
-                        ? "9:00 AM"
-                        : order.plumberService.time === "10:00"
-                          ? "10:00 AM"
-                          : order.plumberService.time === "11:00"
-                            ? "11:00 AM"
-                            : order.plumberService.time === "12:00"
-                              ? "12:00 PM"
-                              : order.plumberService.time === "13:00"
-                                ? "1:00 PM"
-                                : order.plumberService.time === "14:00"
-                                  ? "2:00 PM"
-                                  : order.plumberService.time === "15:00"
-                                    ? "3:00 PM"
-                                    : order.plumberService.time === "16:00"
-                                      ? "4:00 PM"
-                                      : order.plumberService.time === "17:00"
-                                        ? "5:00 PM"
-                                        : order.plumberService.time === "18:00"
-                                          ? "6:00 PM"
-                                          : order.plumberService.time}
-                  </p>
+                  <div className="info-row">
+                    <span className="info-label">Service Time:</span>
+                    <span className="info-value">
+                      <FiClock /> {formatTime(order.plumberService.time)}
+                    </span>
+                  </div>
                 )}
-                <p>
-                  <strong>Area:</strong> 📍 {order.plumberService.area},{" "}
-                  {order.plumberService.city}
-                </p>
-                <p>
-                  <strong>Experience:</strong> {order.plumberService.experience}{" "}
-                  years
-                </p>
-                <p>
-                  <strong>Specialization:</strong>{" "}
-                  {order.plumberService.specialization}
-                </p>
-                <p>
-                  <strong>Hourly Rate:</strong> ₹
-                  {order.plumberService.hourlyRate}/hour
-                </p>
-                <p>
-                  <strong>Service Fee:</strong> ₹
-                  {order.plumberService.serviceFee}
-                </p>
+                <div className="info-row">
+                  <span className="info-label">Location:</span>
+                  <span className="info-value">
+                    <FiMapPin /> {order.plumberService.area},{" "}
+                    {order.plumberService.city}
+                  </span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">Experience:</span>
+                  <span className="info-value">
+                    {order.plumberService.experience} years
+                  </span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">Specialization:</span>
+                  <span className="info-value">
+                    {order.plumberService.specialization}
+                  </span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">Hourly Rate:</span>
+                  <span className="info-value">
+                    <FiDollarSign /> ₹{order.plumberService.hourlyRate || 0}
+                    /hour
+                  </span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">Service Fee:</span>
+                  <span className="info-value">
+                    <FiDollarSign />{" "}
+                    <strong>₹{order.plumberService.serviceFee || 0}</strong>
+                  </span>
+                </div>
               </div>
-            </section>
-          )}
-
-          <section className="order-card">
-            <h3>
-              <FiClock /> Order Timeline
-            </h3>
-            <ul className="timeline">
-              <li>Created: {order.createdAt}</li>
-              {order.updatedAt && <li>Last Updated: {order.updatedAt}</li>}
-            </ul>
+            </div>
           </section>
-        </div>
+        )}
+
+        {/* Customer Notes */}
+        {order.customerNotes && (
+          <section className="details-card">
+            <div className="card-header">
+              <h2>Customer Notes</h2>
+            </div>
+            <div className="card-body">
+              <p className="notes-text">{order.customerNotes}</p>
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );
