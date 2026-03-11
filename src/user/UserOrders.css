@@ -1,0 +1,186 @@
+:root {
+  --primary: #2563eb;
+  --bg-subtle: #f8fafc;
+  --border-color: #e2e8f0;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --success: #166534;
+  --warning: #854d0e;
+  --danger: #991b1b;
+}
+
+.orders-page {
+  background: var(--bg-subtle);
+  min-height: 100vh;
+}
+
+.orders-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 120px 20px 60px; /* Space for Header */
+}
+
+.orders-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.orders-header h1 { font-size: 2.2rem; color: var(--text-main); margin-bottom: 8px; }
+.orders-header p { color: var(--text-muted); }
+
+/* Grid Layout */
+.orders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 24px;
+}
+
+/* Card Styling */
+.order-card-compact {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.order-card-compact:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  padding: 20px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.order-id { font-weight: 700; color: var(--text-main); font-size: 1rem; }
+
+/* Status Tags - Fixed classes to match your React Code */
+.status-tag {
+  padding: 6px 12px;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+}
+
+.status-completed { background: #dcfce7; color: var(--success); }
+.status-processing { background: #dbeafe; color: #1e40af; }
+.status-pending { background: #fef9c3; color: var(--warning); }
+.status-cancelled { background: #fee2e2; color: var(--danger); }
+
+.card-body { padding: 20px; flex: 1; }
+.date-text { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px; }
+
+.item-summary-list {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.item-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  padding: 4px 0;
+  color: var(--text-main);
+}
+
+/* Plumber Badge */
+.plumber-needed-tag {
+  margin-top: 15px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-footer {
+  padding: 20px;
+  background: #f8fafc;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+.price-total small { color: var(--text-muted); font-size: 0.75rem; display: block; }
+.price-total p { font-size: 1.2rem; font-weight: 800; color: var(--text-main); margin: 0; }
+
+.download-bill-btn {
+  background: white;
+  border: 1px solid var(--border-color);
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.download-bill-btn:hover { background: var(--text-main); color: white; border-color: var(--text-main); }
+
+/* Error Alert Styles */
+.error-alert {
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: var(--danger);
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.error-alert button {
+  margin-left: auto;
+  background: var(--danger);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* Loading Spinner */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 100px 0;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+@media (max-width: 640px) {
+  .orders-grid { grid-template-columns: 1fr; }
+}
