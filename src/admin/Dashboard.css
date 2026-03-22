@@ -73,7 +73,7 @@
 }
 
 /* Main Content Area */
-.main-content {
+.dashboard-layout .main-content {
   flex: 1;
   margin-left: 250px;
   display: flex;

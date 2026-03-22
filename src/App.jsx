@@ -7,7 +7,7 @@ import ProductShop from "./user/product/views/ProductShop";
 import ProductDetail from "./user/product/views/ProductDetail";
 import CartView from "./user/cart/views/CartView";
 import CheckoutPage from "./user/checkout/CheckoutPage";
-import UPIPaymentScreen from "./user/checkout/UPIPaymentScreen";
+import PaymentScreen from "./user/checkout/UPIPaymentScreen";
 import UserOrders from "./user/UserOrders";
 import Dashboard from "./admin/Dashboard";
 import ItemManagement from "./admin/item/views/ItemManagement";
@@ -32,7 +32,7 @@ function App() {
           <Route path="/cart" element={<CartView />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/user/checkout" element={<CheckoutPage />} />
-          <Route path="/user/payment/upi" element={<UPIPaymentScreen />} />
+          <Route path="/user/payment/upi" element={<PaymentScreen />} />
           <Route path="/orders" element={<UserOrders />} />
           <Route
             path="/admin"

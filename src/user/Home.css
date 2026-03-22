@@ -1,9 +1,15 @@
+/* Global box-sizing to prevent width calculation issues */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 /* Home Page Container */
 .home-page {
   width: 100%;
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  display: block; /* Changed from flex to prevent child layout issues */
   overflow-x: hidden; /* Prevent horizontal scroll */
   margin: 0;
   padding: 0;
@@ -11,25 +17,28 @@
 
 /* Main content - no top padding for full screen hero */
 .main-content {
-  flex: 1;
   width: 100%;
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
 }
 
 .hero-section {
-  width: 100%;
+  width: 100%; /* Use 100% instead of 100vw to avoid shifting */
   height: 100vh; /* Full viewport height */
   margin: 0;
   padding: 0;
   overflow: hidden;
-  position: relative;
+  position: relative; /* Ensures absolute positioned children are contained */
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Center content horizontally */
 }
 
 .container {
   max-width: 100%; /* Allow full width */
   margin: 0;
-  padding: 0 20px; /* Minimal side padding */
+  padding: 0; /* Remove side padding for edge-to-edge */
   box-sizing: border-box;
 }
 
@@ -39,6 +48,7 @@
   background-color: #ffffff;
   width: 100%;
   margin: 0;
+  box-sizing: border-box;
 }
 
 .section-title {
@@ -51,12 +61,15 @@
 
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(280px, 1fr)
+  ); /* Reduced from 300px to 280px for safer mobile layout */
   gap: 2rem;
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto; /* Center the grid */
-  padding: 0 20px;
+  margin: 0; /* Remove auto centering for full width */
+  padding: 0; /* Remove padding for edge-to-edge */
+  box-sizing: border-box; /* Crucial to prevent padding adding to width */
 }
 
 .feature-card {
@@ -93,13 +106,13 @@
   }
   .section-title {
     font-size: 1.75rem;
-    padding: 0 20px;
+    padding: 0; /* Remove padding for edge-to-edge on mobile */
   }
   .hero-section {
     height: 100vh; /* Keep full height on mobile */
   }
   .features-grid {
-    padding: 0 10px;
+    padding: 0; /* Remove padding for edge-to-edge on mobile */
     gap: 1.5rem;
   }
 }
