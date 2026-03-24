@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import itemController from "./item/controllers/itemController";
@@ -21,8 +21,12 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
 
   const handleSignOut = async () => {
-    await logout();
-    navigate("/signin");
+    try {
+      await logout();
+      navigate("/signin");
+    } catch (error) {
+      console.error("Logout failed", error);
+    }
   };
 
   useEffect(() => {
@@ -34,32 +38,26 @@ const Dashboard = () => {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      // Fetch all data in parallel
       const [itemsResult, ordersResult, plumbersResult] = await Promise.all([
         itemController.fetchItems(),
         orderController.fetchOrders(currentUser.uid),
         plumberController.fetchPlumbers(),
       ]);
 
-      // Process items data
       const totalProducts = itemsResult.success ? itemsResult.data.length : 0;
-
-      // Process orders data
       const totalOrders = ordersResult.success ? ordersResult.orders.length : 0;
+
       const recentOrders = ordersResult.success
-        ? ordersResult.orders
-            .slice(0, 5) // Get latest 5 orders
-            .map((order) => ({
-              id: order.id,
-              date: order.orderDate || order.createdAt,
-              type: "Order",
-              description: `${order.orderNumber} - ${order.customerInfo?.name || "Customer"}`,
-              amount: order.totalAmount || 0,
-              status: order.status || "Pending",
-            }))
+        ? ordersResult.orders.slice(0, 5).map((order) => ({
+            id: order.id,
+            date: order.orderDate || order.createdAt,
+            orderNo: order.orderNumber || "N/A",
+            customer: order.customerInfo?.name || "Guest Customer",
+            amount: order.totalAmount || 0,
+            status: order.status || "Pending",
+          }))
         : [];
 
-      // Process plumbers data
       const totalPlumbers = plumbersResult.success
         ? plumbersResult.data.length
         : 0;
@@ -67,14 +65,7 @@ const Dashboard = () => {
         ? plumbersResult.data.filter((p) => p.isActive).length
         : 0;
 
-      // Update states
-      setStats({
-        totalProducts,
-        totalOrders,
-        totalPlumbers,
-        activePlumbers,
-      });
-
+      setStats({ totalProducts, totalOrders, totalPlumbers, activePlumbers });
       setRecentActivities(recentOrders);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
@@ -83,11 +74,20 @@ const Dashboard = () => {
     }
   };
 
+  const formatDate = (dateObj) => {
+    if (!dateObj) return "N/A";
+    const date = dateObj.toDate ? dateObj.toDate() : new Date(dateObj);
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
   return (
     <div className="dashboard-layout">
-      {/* Sidebar / Nav Bar */}
       <aside className="sidebar">
-        <div className="sidebar-logo">Admin Panel</div>
+        <div className="sidebar-logo">ADMIN PORTAL</div>
         <nav className="nav-menu">
           <Link to="/admin" className="nav-item active">
             Dashboard
@@ -101,105 +101,128 @@ const Dashboard = () => {
           <Link to="/admin/orders" className="nav-item">
             Orders
           </Link>
-          {/* <Link to="/admin/settings" className="nav-item">
-            Settings
-          </Link> */}
         </nav>
       </aside>
 
       <div className="main-content">
-        {/* Header Bar */}
-        <header className="header-bar">
-          <h2>Dashboard Overview</h2>
-          <div className="header-profile">
-            <span>{currentUser?.email}</span>
+        <header className="top-navbar">
+          <div className="navbar-left">
+            <h1 className="navbar-title">ADMIN DASHBOARD</h1>
+          </div>
+          <div className="navbar-right">
+            <span className="user-email">{currentUser?.email}</span>
             <button onClick={handleSignOut} className="logout-btn">
               Logout
             </button>
           </div>
         </header>
 
-        <main className="dashboard-container">
-          {loading ? (
-            <div className="loading-spinner">Loading Data...</div>
-          ) : (
-            <>
-              {/* Stats Grid with Real Data */}
-              <div className="dashboard-grid">
-                <div className="stat-card purple">
-                  <h3>{stats.totalProducts}</h3>
-                  <p>Total Products</p>
-                </div>
-                <div className="stat-card orange">
-                  <h3>{stats.totalOrders}</h3>
-                  <p>Total Orders</p>
-                </div>
-                <div className="stat-card blue">
-                  <h3>{stats.totalPlumbers}</h3>
-                  <p>Total Plumbers</p>
-                </div>
-                <div className="stat-card green">
-                  <h3>{stats.activePlumbers}</h3>
-                  <p>Active Plumbers</p>
-                </div>
-              </div>
+        <main className="dashboard-main">
+          <div className="dashboard-content">
+            {loading ? (
+              <div className="loading-spinner">Fetching latest records...</div>
+            ) : (
+              <>
+                <section className="stats-section">
+                  <h2 className="section-header">Overview</h2>
+                  <div className="stats-grid">
+                    <div className="stat-card stat-products">
+                      <div className="stat-icon">📦</div>
+                      <div className="stat-info">
+                        <h3 className="stat-value">{stats.totalProducts}</h3>
+                        <p className="stat-label">Total Products</p>
+                      </div>
+                    </div>
+                    <div className="stat-card stat-orders">
+                      <div className="stat-icon">🛒</div>
+                      <div className="stat-info">
+                        <h3 className="stat-value">{stats.totalOrders}</h3>
+                        <p className="stat-label">Total Orders</p>
+                      </div>
+                    </div>
+                    <div className="stat-card stat-plumbers">
+                      <div className="stat-icon">👷</div>
+                      <div className="stat-info">
+                        <h3 className="stat-value">{stats.totalPlumbers}</h3>
+                        <p className="stat-label">Total Plumbers</p>
+                      </div>
+                    </div>
+                    <div className="stat-card stat-active">
+                      <div className="stat-icon">✓</div>
+                      <div className="stat-info">
+                        <h3 className="stat-value">{stats.activePlumbers}</h3>
+                        <p className="stat-label">Active Now</p>
+                      </div>
+                    </div>
+                  </div>
+                </section>
 
-              <div className="activities-section">
-                <h2 className="section-title">Recent Orders</h2>
-                <div className="table-container">
-                  <table className="activities-table">
-                    <thead>
-                      <tr>
-                        <th>Date</th>
-                        <th>Order ID</th>
-                        <th>Description</th>
-                        <th>Amount</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {recentActivities.length === 0 ? (
+                <section className="orders-section">
+                  <div className="section-header-bar">
+                    <h2 className="section-title">Recent Orders</h2>
+                    <Link to="/admin/orders" className="view-all-link">
+                      View All
+                    </Link>
+                  </div>
+                  <div className="table-wrapper">
+                    <table className="orders-table">
+                      <thead>
                         <tr>
-                          <td colSpan="5" className="no-data">
-                            No orders found
-                          </td>
+                          <th>Date</th>
+                          <th>Order #</th>
+                          <th>Customer</th>
+                          <th>Amount</th>
+                          <th>Status</th>
+                          <th>Action</th>
                         </tr>
-                      ) : (
-                        recentActivities.map((activity, index) => (
-                          <tr
-                            key={index}
-                            className="activity-row"
-                            onClick={() =>
-                              navigate(`/admin/orders/${activity.id}`)
-                            }
-                          >
-                            <td>
-                              {activity.date &&
-                                new Date(
-                                  activity.date.toDate
-                                    ? activity.date.toDate()
-                                    : activity.date,
-                                ).toLocaleDateString("en-IN")}
-                            </td>
-                            <td>{activity.type}</td>
-                            <td>{activity.description}</td>
-                            <td>₹{activity.amount.toLocaleString("en-IN")}</td>
-                            <td>
-                              <span
-                                className={`status-badge ${activity.status?.toLowerCase()}`}
-                              >
-                                {activity.status}
-                              </span>
+                      </thead>
+                      <tbody>
+                        {recentActivities.length === 0 ? (
+                          <tr>
+                            <td colSpan="6" className="empty-state">
+                              No recent orders found.
                             </td>
                           </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </>
-          )}
+                        ) : (
+                          recentActivities.map((order) => (
+                            <tr key={order.id} className="order-row">
+                              <td className="date-cell">
+                                {formatDate(order.date)}
+                              </td>
+                              <td className="order-no">{order.orderNo}</td>
+                              <td className="customer-cell">
+                                {order.customer}
+                              </td>
+                              <td className="amount-cell">
+                                ₹{order.amount.toLocaleString("en-IN")}
+                              </td>
+                              <td className="status-cell">
+                                <span
+                                  className={`status-badge status-${order.status.toLowerCase()}`}
+                                >
+                                  {order.status}
+                                </span>
+                              </td>
+                              <td className="action-cell">
+                                <button
+                                  onClick={() =>
+                                    navigate(`/admin/orders/${order.id}`)
+                                  }
+                                  className="action-btn"
+                                >
+                                  View
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              </>
+            )}
+          </div>
         </main>
       </div>
     </div>

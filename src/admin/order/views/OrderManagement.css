@@ -4,6 +4,56 @@
   min-height: 100vh;
 }
 
+/* Header styling */
+.header-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.header-bar.compact {
+  height: auto;
+  padding: 20px 30px;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.header-left h2 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.header-left p {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.header-profile {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 15px;
+}
+
+.header-profile span {
+  color: #64748b;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+/* Page content */
+.page-content {
+  padding: 30px;
+  background: #f8fafc;
+}
+
 .order-header {
   display: flex;
   justify-content: space-between;
@@ -29,6 +79,7 @@
   gap: 12px;
   margin-bottom: 24px;
   flex-wrap: wrap;
+  padding: 0;
 }
 
 .chip {
@@ -44,15 +95,15 @@
 }
 
 .chip:hover {
-  border-color: #6366f1;
-  color: #6366f1;
+  border-color: #2563eb;
+  color: #2563eb;
   transform: translateY(-2px);
 }
 
 .chip.active {
-  background: #6366f1;
+  background: #4f46e5;
   color: white;
-  border-color: #6366f1;
+  border-color: #4f46e5;
 }
 
 .table-container {
@@ -61,11 +112,13 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow: hidden;
   border: 1px solid #e2e8f0;
+  margin-top: 20px;
 }
 
 .order-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: auto;
 }
 
 .order-table thead {
@@ -81,6 +134,7 @@
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .order-table tbody tr {
@@ -98,14 +152,23 @@
   font-size: 14px;
 }
 
-.order-number {
+.id-cell {
   font-weight: 600;
-  color: #6366f1;
+  color: #2563eb;
 }
 
-.amount {
+.id-cell .sub-text {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: normal;
+  margin-top: 4px;
+}
+
+.amount-only-cell {
   font-weight: 600;
   color: #059669;
+  font-size: 15px;
 }
 
 .status-badge {
@@ -116,6 +179,27 @@
   display: inline-block;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.timing-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.date-row {
+  display: block;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.time-row {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .status-pending {
@@ -138,31 +222,6 @@
   color: #991b1b;
 }
 
-.payment-badge {
-  padding: 6px 12px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-  display: inline-block;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.payment-paid {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.payment-partial {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.payment-unpaid {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
 .action-buttons {
   display: flex;
   gap: 8px;
@@ -170,31 +229,38 @@
 
 .btn-view,
 .btn-delete {
-  padding: 6px 12px;
+  padding: 8px 12px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
   font-size: 16px;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-view {
-  background: #e0e7ff;
-  color: #4338ca;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
 }
 
 .btn-view:hover {
-  background: #c7d2fe;
+  background: #dbeafe;
+  border-color: #93c5fd;
   transform: scale(1.1);
 }
 
 .btn-delete {
-  background: #fee2e2;
+  background: #fecaca;
   color: #991b1b;
+  border: 1px solid #fca5a5;
 }
 
 .btn-delete:hover {
-  background: #fecaca;
+  background: #fca5a5;
+  border-color: #f87171;
   transform: scale(1.1);
 }
 
@@ -217,6 +283,10 @@
   background: #fee2e2;
   border-radius: 8px;
   margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 /* Responsive Design */
@@ -231,77 +301,36 @@
   }
 }
 
-/* Customer ID styling */
-.customer-id {
-  font-family: "Courier New", monospace;
-  font-size: 0.85rem;
-  color: #6b7280;
-  background: #f3f4f6;
-  padding: 4px 8px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.customer-id:hover {
-  background: #e5e7eb;
-}
-
-/* Plumber service details */
-.plumber-service-details {
-  font-size: 0.75rem;
-  line-height: 1.4;
-}
-
-.plumber-service-details > div {
-  margin-bottom: 4px;
-  padding: 2px 4px;
-  border-radius: 3px;
-}
-
-.plumber-name {
-  background: #dcfce7;
-  color: #166534;
-  font-weight: 600;
-}
-
-.plumber-date {
-  background: #dbeafe;
-  color: #1e40af;
-}
-
-.plumber-phone {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.plumber-area {
-  background: #e0e7ff;
-  color: #4338ca;
-}
-
-.plumber-fee {
-  background: #ecfdf5;
-  color: #059669;
-  font-weight: 600;
-}
-
-.no-plumber {
-  background: #fef2f2;
-  color: #dc2626;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  display: inline-block;
-}
-
 @media (max-width: 768px) {
   .order-management {
     padding: 16px;
   }
 
-  .order-title {
-    font-size: 24px;
+  .page-content {
+    padding: 16px 0;
+  }
+
+  .order-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .header-left {
+    width: 100%;
+  }
+
+  .header-profile {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .header-left h2 {
+    font-size: 22px;
+  }
+
+  .header-left p {
+    font-size: 12px;
   }
 
   .table-container {
@@ -309,26 +338,44 @@
   }
 
   .order-table {
-    min-width: 800px;
+    min-width: 600px;
+    font-size: 12px;
   }
 
-  .customer-id {
-    font-size: 0.75rem;
-    padding: 2px 6px;
+  .order-table th,
+  .order-table td {
+    padding: 10px 8px;
   }
 
-  .plumber-service-details {
-    font-size: 0.7rem;
+  .filter-chips {
+    gap: 8px;
+    margin-bottom: 16px;
   }
 
-  .plumber-service-details > div {
-    margin-bottom: 2px;
-    padding: 1px 3px;
+  .chip {
+    padding: 6px 14px;
+    font-size: 12px;
   }
 
-  .no-plumber {
-    font-size: 0.7rem;
-    padding: 2px 6px;
-  }
+  .action-buttons {
+    gap: 4px;
   }
 
+  .btn-view,
+  .btn-delete {
+    padding: 6px 10px;
+    font-size: 14px;
+  }
+
+  .timing-box {
+    gap: 2px;
+  }
+
+  .date-row {
+    font-size: 12px;
+  }
+
+  .time-row {
+    font-size: 10px;
+  }
+}

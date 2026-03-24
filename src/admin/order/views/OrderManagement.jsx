@@ -2,15 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
 import * as orderController from "../controllers/orderController";
-import {
-  FiEye,
-  FiTrash2,
-  FiClock,
-  FiAlertCircle,
-  FiUser,
-  FiCheck,
-  FiX,
-} from "react-icons/fi";
+import { FiEye, FiTrash2, FiClock, FiAlertCircle } from "react-icons/fi";
 import "./OrderManagement.css";
 import "../../Dashboard.css";
 
@@ -155,14 +147,13 @@ const OrderManagement = () => {
                   <th>Order Timing</th>
                   <th>Amount</th>
                   <th>Status</th>
-                  <th>Plumber Service</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredOrders.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="no-data">
+                    <td colSpan="5" className="no-data">
                       No orders found.
                     </td>
                   </tr>
@@ -207,18 +198,6 @@ const OrderManagement = () => {
                         >
                           {order.status || "Pending"}
                         </span>
-                      </td>
-
-                      <td>
-                        {order.plumberSelected ? (
-                          <div className="service-badge required">
-                            <FiCheck /> Plumber Required
-                          </div>
-                        ) : (
-                          <div className="service-badge not-required">
-                            <FiX /> Not Required
-                          </div>
-                        )}
                       </td>
 
                       <td>
